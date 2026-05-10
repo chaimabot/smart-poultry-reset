@@ -630,62 +630,6 @@
             <span id="btn-spinner" style="display: none" class="spinner"></span>
           </button>
 
-          <!-- Platform CTA (hidden until password is set) -->
-          <a
-            class="platform-cta"
-            id="platform-cta"
-            href="https://smartpoultrychaima.vercel.app/"
-            target="_blank"
-            rel="noopener"
-            style="display: none"
-          >
-            <svg
-              width="22"
-              height="22"
-              viewBox="0 0 22 22"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <rect
-                width="22"
-                height="22"
-                rx="6"
-                fill="#16a34a"
-                fill-opacity=".15"
-              />
-              <path
-                d="M6 16 L11 6 L16 16"
-                stroke="#16a34a"
-                stroke-width="1.8"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-              />
-              <path
-                d="M7.5 13h7"
-                stroke="#16a34a"
-                stroke-width="1.8"
-                stroke-linecap="round"
-              />
-            </svg>
-            <div class="cta-text">
-              <span class="cta-label">Accéder à la plateforme</span>
-              <span class="cta-action"
-                >Ouvrir Smart Poultry &amp; installer l'app</span
-              >
-            </div>
-            <span class="cta-arrow">
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path
-                  d="M3 8h10M9 4l4 4-4 4"
-                  stroke="#16a34a"
-                  stroke-width="1.6"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                />
-              </svg>
-            </span>
-          </a>
-
           <div class="footer-link" style="margin-top: 14px">
             Déjà connecté ?
             <strong style="color: #15803d">Ouvrez l'application</strong>
@@ -745,11 +689,10 @@
             Ouvrez l'application <strong>Smart Poultry</strong> et
             connectez-vous avec votre email et votre nouveau mot de passe.
           </div>
+          <!-- Bouton télécharger APK -->
           <a
             class="platform-cta"
-            href="https://smartpoultrychaima.vercel.app/"
-            target="_blank"
-            rel="noopener"
+            href="https://drive.usercontent.google.com/download?id=1vt2XRBaSHvv_07K_jqUetr6JB4DZrlRB&export=download&authuser=0&confirm=t"
             style="margin-top: 10px"
           >
             <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
@@ -761,24 +704,22 @@
                 fill-opacity=".15"
               />
               <path
-                d="M6 16 L11 6 L16 16"
+                d="M11 4v10M6 10l5 5 5-5"
                 stroke="#16a34a"
                 stroke-width="1.8"
                 stroke-linecap="round"
                 stroke-linejoin="round"
               />
               <path
-                d="M7.5 13h7"
+                d="M4 17h14"
                 stroke="#16a34a"
                 stroke-width="1.8"
                 stroke-linecap="round"
               />
             </svg>
             <div class="cta-text">
-              <span class="cta-label">Accéder à la plateforme</span>
-              <span class="cta-action"
-                >Ouvrir Smart Poultry &amp; installer l'app</span
-              >
+              <span class="cta-label">Installation Android</span>
+              <span class="cta-action">Télécharger l'application APK</span>
             </div>
             <span class="cta-arrow">
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -798,19 +739,46 @@
 
     <script>
       const API_URL = "https://smart-poultry-projet.onrender.com";
-      const parts = window.location.pathname.split("/").filter(Boolean);
-      const token = parts[parts.length - 1];
+
+      // Extraire le token depuis ?token=xxx OU depuis le dernier segment du pathname
+      function extractToken() {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get("token")) return urlParams.get("token");
+        const parts = window.location.pathname.split("/").filter(Boolean);
+        const last = parts[parts.length - 1];
+        if (last && last !== "definir-mot-de-passe" && last !== "index.html")
+          return last;
+        return null;
+      }
+
+      const token = extractToken();
 
       (async () => {
-        if (!token || token === "definir-mot-de-passe") {
-          showAlert("Lien invalide. Contactez votre administrateur.", "error");
+        if (!token) {
+          showAlert(
+            "Lien invalide — aucun token trouvé. Contactez votre administrateur.",
+            "error",
+          );
           document.getElementById("submit-btn").disabled = true;
           return;
         }
         try {
           const res = await fetch(
             `${API_URL}/api/invite/verify?token=${token}`,
+            {
+              method: "GET",
+              mode: "cors",
+              headers: { "Content-Type": "application/json" },
+            },
           );
+          if (!res.ok) {
+            showAlert(
+              `Erreur serveur (${res.status}). Contactez votre administrateur.`,
+              "error",
+            );
+            document.getElementById("submit-btn").disabled = true;
+            return;
+          }
           const data = await res.json();
           if (!data.success) {
             showAlert(
@@ -819,12 +787,14 @@
             );
             document.getElementById("submit-btn").disabled = true;
           }
-        } catch {
+        } catch (err) {
+          console.error("[verify] erreur:", err);
+          // CORS bloqué → on laisse quand même le bouton actif pour ne pas bloquer l'utilisateur
+          // On affiche juste un avertissement discret
           showAlert(
-            "Impossible de vérifier le lien. Vérifiez votre connexion.",
-            "error",
+            "Avertissement : vérification du lien impossible. Vous pouvez quand même définir votre mot de passe.",
+            "warning",
           );
-          document.getElementById("submit-btn").disabled = true;
         }
       })();
 
@@ -845,15 +815,26 @@
 
         setLoading(true);
         try {
-          const vRes = await fetch(
-            `${API_URL}/api/invite/verify?token=${token}`,
-          );
-          const vData = await vRes.json();
-          const firstName = vData.data?.firstName || "Utilisateur";
-          const lastName = vData.data?.lastName || "";
+          // Récupérer firstName/lastName si possible
+          let firstName = "Utilisateur",
+            lastName = "";
+          try {
+            const vRes = await fetch(
+              `${API_URL}/api/invite/verify?token=${token}`,
+              { mode: "cors" },
+            );
+            if (vRes.ok) {
+              const vData = await vRes.json();
+              firstName = vData.data?.firstName || "Utilisateur";
+              lastName = vData.data?.lastName || "";
+            }
+          } catch (_) {
+            /* CORS: on continue quand même */
+          }
 
           const res = await fetch(`${API_URL}/api/invite/complete`, {
             method: "POST",
+            mode: "cors",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ token, password, firstName, lastName }),
           });
@@ -861,13 +842,16 @@
           if (data.success) {
             document.getElementById("form-screen").style.display = "none";
             document.getElementById("success-screen").style.display = "block";
-            document.getElementById("platform-cta").style.display = "flex";
           } else {
             showAlert(data.error || "Une erreur est survenue.", "error");
             setLoading(false);
           }
-        } catch {
-          showAlert("Erreur réseau. Réessayez.", "error");
+        } catch (err) {
+          console.error("[submit] erreur:", err);
+          showAlert(
+            "Erreur réseau. Vérifiez votre connexion et réessayez.",
+            "error",
+          );
           setLoading(false);
         }
       }
@@ -875,8 +859,17 @@
       function showAlert(msg, type) {
         const el = document.getElementById("alert");
         el.textContent = msg;
-        el.className =
-          type === "error" ? "alert show-error" : "alert show-success";
+        if (type === "warning") {
+          el.className = "alert";
+          el.style.display = "block";
+          el.style.background = "#fffbeb";
+          el.style.color = "#92400e";
+          el.style.border = "1px solid #fcd34d";
+        } else {
+          el.style = "";
+          el.className =
+            type === "error" ? "alert show-error" : "alert show-success";
+        }
       }
 
       function setLoading(on) {
@@ -891,7 +884,6 @@
 
       function toggleEye(id, btn) {
         const input = document.getElementById(id);
-        const svgId = "eye-" + id;
         if (input.type === "password") {
           input.type = "text";
           btn.querySelector("svg").innerHTML = `
