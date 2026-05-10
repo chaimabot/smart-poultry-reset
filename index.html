@@ -47,7 +47,6 @@
         padding: 30px 0;
       }
 
-      /* ── Header / Logo ── */
       .header {
         display: flex;
         flex-direction: column;
@@ -88,7 +87,6 @@
         text-transform: uppercase;
       }
 
-      /* ── Blur Card ── */
       .card {
         width: 100%;
         border-radius: 30px;
@@ -112,7 +110,6 @@
         line-height: 1.5;
       }
 
-      /* ── Info box ── */
       .info-box {
         display: flex;
         align-items: flex-start;
@@ -137,7 +134,6 @@
         line-height: 1.6;
       }
 
-      /* ── Inputs ── */
       .input-group {
         margin-bottom: 16px;
       }
@@ -198,7 +194,6 @@
         line-height: 1;
       }
 
-      /* ── Strength bar ── */
       .strength-bar {
         height: 4px;
         border-radius: 2px;
@@ -224,7 +219,6 @@
         min-height: 14px;
       }
 
-      /* ── Alert ── */
       .alert {
         border-radius: 12px;
         padding: 12px 15px;
@@ -247,7 +241,6 @@
         border: 1px solid #bbf7d0;
       }
 
-      /* ── Button ── */
       .btn {
         width: 100%;
         height: 54px;
@@ -298,7 +291,6 @@
         color: #475569;
       }
 
-      /* ── Success screen ── */
       #success-screen {
         display: none;
         text-align: center;
@@ -347,14 +339,12 @@
     <div class="overlay"></div>
 
     <div class="scroll-wrap">
-      <!-- Logo / Header -->
       <div class="header">
         <div class="logo-wrap">🐦</div>
         <div class="app-name">Smart <span>Poultry</span></div>
         <div class="tagline">Precision Agri-Tech</div>
       </div>
 
-      <!-- Card -->
       <div class="card">
         <!-- Formulaire -->
         <div id="form-screen">
@@ -366,15 +356,14 @@
 
           <div class="info-box">
             <span class="info-icon">ℹ️</span>
-            <span class="info-text"
-              >Après avoir défini votre mot de passe, connectez-vous directement
-              dans l'application Smart Poultry avec votre email.</span
-            >
+            <span class="info-text">
+              Après avoir défini votre mot de passe, connectez-vous directement
+              dans l'application Smart Poultry avec votre email.
+            </span>
           </div>
 
           <div id="alert" class="alert"></div>
 
-          <!-- Mot de passe -->
           <div class="input-group">
             <label class="input-label">Nouveau mot de passe</label>
             <div class="input-box">
@@ -399,7 +388,6 @@
             <div class="strength-label" id="strength-label"></div>
           </div>
 
-          <!-- Confirmer -->
           <div class="input-group">
             <label class="input-label">Confirmer le mot de passe</label>
             <div class="input-box">
@@ -447,12 +435,14 @@
     </div>
 
     <script>
-      const API_URL = "https://TON-BACKEND.onrender.com"; // ← CHANGE ICI
+      // ✅ URL du backend éleveur sur Render (sans /api à la fin)
+      const API_URL = "https://smart-poultry-projet.onrender.com";
 
+      // Récupérer le token depuis l'URL
       const parts = window.location.pathname.split("/").filter(Boolean);
       const token = parts[parts.length - 1];
 
-      // Vérifier token au chargement
+      // Vérifier le token au chargement
       (async () => {
         if (!token || token === "definir-mot-de-passe") {
           showAlert("Lien invalide. Contactez votre administrateur.", "error");
@@ -460,8 +450,9 @@
           return;
         }
         try {
+          // ✅ Route corrigée : /api/invite/verify
           const res = await fetch(
-            `${API_URL}/api/admin/eleveurs/verify-invite?token=${token}`,
+            `${API_URL}/api/invite/verify?token=${token}`,
           );
           const data = await res.json();
           if (!data.success) {
@@ -498,22 +489,20 @@
 
         setLoading(true);
         try {
-          // Récupérer firstName/lastName pour ne pas les écraser
+          // ✅ Récupérer firstName/lastName pour ne pas les écraser
           const vRes = await fetch(
-            `${API_URL}/api/admin/eleveurs/verify-invite?token=${token}`,
+            `${API_URL}/api/invite/verify?token=${token}`,
           );
           const vData = await vRes.json();
           const firstName = vData.data?.firstName || "Utilisateur";
           const lastName = vData.data?.lastName || "";
 
-          const res = await fetch(
-            `${API_URL}/api/admin/eleveurs/complete-invite`,
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ token, password, firstName, lastName }),
-            },
-          );
+          // ✅ Route corrigée : /api/invite/complete
+          const res = await fetch(`${API_URL}/api/invite/complete`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token, password, firstName, lastName }),
+          });
           const data = await res.json();
 
           if (data.success) {
