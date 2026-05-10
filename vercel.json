@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/definir-mot-de-passe/:token",
-      "destination": "/index.html"
+      "destination": "/[token].html"
     }
   ]
 }
